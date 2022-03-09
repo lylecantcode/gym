@@ -1,3 +1,5 @@
+#gym
+
 Creating an exercise tracker for the gym.
 
 Currently working on V2.
