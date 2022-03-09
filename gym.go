@@ -6,18 +6,20 @@ import (
 	"time"
 	"os"
 	_"github.com/mattn/go-sqlite3"
+	"strings"
 )
 
 func main() {
 	database, _ :=
 		sql.Open("sqlite3", "./gym.db")
 	statement, _ :=
-		database.Prepare("CREATE TABLE IF NOT EXISTS weights (id INTEGER PRIMARY KEY, weight INT NOT NULL, units TEXT NOT NULL, sets INT NOT NULL DEFAULT 3, date TEXT NOT NULL)")
+		database.Prepare("CREATE TABLE IF NOT EXISTS weights (id INTEGER PRIMARY KEY, exercise TEXT NOT NULL, weight INT NOT NULL, units TEXT NOT NULL, sets INT NOT NULL DEFAULT 3, date TEXT NOT NULL)")
 	statement.Exec()
-		
 
+	exercises := []string{"bench", "curls", "dips", "farmers-walks", "good-mornings", "overhead-press", "pullups", "rows", "squats", "tricep-dips", "tricep-ext"}
+	unitOptions := []string{"bodyweight", "kg", "kgs", "lb", "lbs"}
 	var weight, sets int
-	var unit, date, formatting string
+	var unit, date, exercise, formatting string
 	date = time.Now().Format("02-01-2006")
 
 	fmt.Println("How many different exercises have you done?")
@@ -29,13 +31,27 @@ func main() {
 	}
 
 	for i := 0; i < exercisesDone; i++{
-		fmt.Println("Please input exercise", i+1, ", in the format:  5 kg x 3 || 40 lbs x 1",)
-		fmt.Scanf("%d %s %s %d", &weight, &unit, &formatting, &sets)
-		if !((weight > 0 && weight < 1000) && (sets > 0 && sets < 1000) && (unit == "kg" || unit == "lbs")){
-			fmt.Println("Weight must be an integer, units must be \"kg\" or \"lbs\".")
+		fmt.Println("What was exercise", i+1, "? Please choose from the following:\n", exercises) 
+		fmt.Scanf("%s", &exercise)
+		exercise = strings.ToLower(exercise)
+		if !validValue(exercise, exercises) {
+			fmt.Println("Invalid exercise.")
 			os.Exit(2)
 		}
-		addToDatabase(weight, sets, unit, date, database)
+
+		fmt.Println("Please input weight for", exercise, "in the format:  5 kg x 3 || 40 lbs x 1")
+		fmt.Scanf("%d %s %s %d", &weight, &unit, &formatting, &sets)
+		unit = strings.ToLower(unit)
+		if !validValue(unit, unitOptions) {
+			fmt.Println("Invalid units, please use one of:", unitOptions)
+			os.Exit(3)
+		}
+
+		if !((weight > 0 && weight < 1000) && (sets > 0 && sets < 1000)){
+			fmt.Println("Weight must be a positive integer.")
+			os.Exit(4)
+		}
+		addToDatabase(weight, sets, exercise, unit, date, database)
 	}
 
 	
@@ -43,17 +59,23 @@ func main() {
 	rows, _ :=
 		database.Query("SELECT * FROM weights")
 	for rows.Next() {
-		rows.Scan(&id, &weight, &unit, &sets, &date)
-		fmt.Println(id, ":", weight, unit, "x", sets, "on", date)
-	}
-	for rows.Next() {
-		rows.Scan(&id, &weight, &unit, &sets, &date)
-		fmt.Println(id, ":", weight, unit, "x", sets, "on", date)
+		rows.Scan(&id, &exercise, &weight, &unit, &sets, &date)
+		fmt.Println(id, ":", exercise, weight, unit, "x", sets, "on", date)
 	}
 }
 
-func addToDatabase(weight, sets int, unit, date string, database *sql.DB){
+func addToDatabase(weight, sets int, exercise, unit, date string, database *sql.DB){
 	statement, _ :=
-			database.Prepare("INSERT INTO weights (weight, units, sets, date) VALUES (?, ?, ?, ?)")
-	statement.Exec(weight, unit, sets, date)
+			database.Prepare("INSERT INTO weights (exercise, weight, units, sets, date) VALUES (?, ?, ?, ?, ?)")
+	statement.Exec(exercise, weight, unit, sets, date)
 } 
+
+
+func validValue(value string, list []string) bool{
+	for _, i := range list{
+		if i == value {
+			return true
+		}
+	}
+	return false
+}
