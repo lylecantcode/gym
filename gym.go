@@ -9,6 +9,13 @@ import (
 	"strings"
 )
 
+/*type weightLifting struct{
+	exercise string
+	weight int
+	unit string
+	sets int
+}*/
+
 func main() {
 	database, _ :=
 		sql.Open("sqlite3", "./gym.db")
@@ -29,12 +36,13 @@ func main() {
 		fmt.Println("Must have done at least 1 exercise.")
 		os.Exit(1)
 	}
-
+	var check bool
 	for i := 0; i < exercisesDone; i++{
 		fmt.Println("What was exercise", i+1, "? Please choose from the following:\n", exercises) 
 		fmt.Scanf("%s", &exercise)
 		exercise = strings.ToLower(exercise)
-		if !validValue(exercise, exercises) {
+		check, exercise = validValue(exercise, exercises)
+		if !check {
 			fmt.Println("Invalid exercise.")
 			os.Exit(2)
 		}
@@ -42,7 +50,8 @@ func main() {
 		fmt.Println("Please input weight for", exercise, "in the format:  5 kg x 3 || 40 lbs x 1")
 		fmt.Scanf("%d %s %s %d", &weight, &unit, &formatting, &sets)
 		unit = strings.ToLower(unit)
-		if !validValue(unit, unitOptions) {
+		check, unit = validValue(unit, unitOptions)
+		if !check {
 			fmt.Println("Invalid units, please use one of:", unitOptions)
 			os.Exit(3)
 		}
@@ -71,11 +80,11 @@ func addToDatabase(weight, sets int, exercise, unit, date string, database *sql.
 } 
 
 
-func validValue(value string, list []string) bool{
-	for _, i := range list{
-		if i == value {
-			return true
+func validValue(value string, list []string) (bool, string) {
+	for _, item := range list{
+		if strings.Contains(item, value){
+			return true, item
 		}
 	}
-	return false
+	return false, ""
 }
