@@ -1,8 +1,8 @@
-# gym
+# Gym (Tracker)
 
 Creating an exercise tracker for the gym.
 
-Currently working on V3.
+Currently working on V7.
 
 ## Project Plan:
 
@@ -10,8 +10,9 @@ Currently working on V3.
 ~v2) Number of sets and multiple exercises per day. //Take input of number of exercises, then weights, sets, etc~  
 ~v3) Types of exercise done, e.g. Bench Press~  
 ~v4) Reorganised to use structs~  
-v5) Predictions based on day of week (for 7 day rotating schedule)  
-v6) Personal bests per exercise, as a comparison to new workout
+~v5) Predictions based on day of week (for 7 day rotating schedule)~  
+~v6) Add enums in for exercise and unit options~  
+v7) Personal bests per exercise, as a comparison to new workout
 
 ## Potential extras:
 
