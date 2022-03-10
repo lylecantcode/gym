@@ -49,7 +49,7 @@ func main() {
 	database, _ :=
 		sql.Open("sqlite3", "./gym.db")
 	statement, _ :=
-		database.Prepare("CREATE TABLE IF NOT EXISTS weights (id INTEGER PRIMARY KEY, exercise TEXT NOT NULL, weight INT NOT NULL, units TEXT NOT NULL, reps INT NOT NULL DEFAULT 5, date TEXT NOT NULL)")
+		database.Prepare("CREATE TABLE IF NOT EXISTS weights (id INTEGER PRIMARY KEY, exercise INT NOT NULL, weight INT NOT NULL, units INT NOT NULL, reps INT NOT NULL DEFAULT 5, date TEXT NOT NULL)")
 	statement.Exec()
 
 	wl := weightLifting {Tricepext, 0, Resistancebands, 0}
@@ -71,9 +71,9 @@ func main() {
 	fmt.Scanf("%s", &records)
 	switch strings.ToLower(records) {
 	case "y", "yes":
-		printAll(database)
+		wl.printAll(database)
 	case "best", "bests", "b":
-		printBest(database)
+		wl.printBest(database)
 	}
 	
 }
@@ -83,7 +83,7 @@ func main() {
 func (wl weightLifting) addToDatabase(database *sql.DB){
 	statement, _ :=
 			database.Prepare("INSERT INTO weights (exercise, weight, units, reps, date) VALUES (?, ?, ?, ?, ?)")
-	statement.Exec(wl.exercise.String(), wl.weight, wl.unit.String(), wl.reps, time.Now().Format("02-01-2006"))
+	statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().Format("02-01-2006"))
 	//statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().AddDate(0, 0, -7).Format("02-01-2006")) //to add historical entry for testing
 } 
 
@@ -91,10 +91,9 @@ func (wl weightLifting) addToDatabase(database *sql.DB){
 
 func copyPrevious(history string, copyAll bool, database *sql.DB) {
 	if copyAll == true {
-		today := time.Now().Format("02-01-2006")
 		statement, _ :=
 			database.Prepare("INSERT INTO weights (date, exercise, weight, units, reps) SELECT ?, exercise, weight, units, reps FROM weights WHERE date = ?")
-		statement.Exec(today, history)
+		statement.Exec(time.Now().Format("02-01-2006"), history)
 	}
 }
 
@@ -144,11 +143,11 @@ func (e Exercises) String() string {
 	case Dips:
 		return "dips"
 	case Farmerswalks:
-		return "farmers walks"
+		return "farmers-walks"
 	case Goodmornings:
-		return "good mornings"
+		return "good-mornings"
 	case Overheadpress:
-		return "overhead press"
+		return "overhead-press"
 	case Pullups:
 		return "pullups"
 	case Rows:
@@ -156,9 +155,9 @@ func (e Exercises) String() string {
 	case Squats:
 		return "squats"
 	case Tricepdips:
-		return "tricep dips"
+		return "tricep-dips"
 	case Tricepext:
-		return "tricep extensions"
+		return "tricep-extensions"
 	}
 	return "error"
 }
@@ -190,15 +189,13 @@ func parseUnits(value string) (bool, UnitOptions) {
 
 func (wl weightLifting) prediction(database *sql.DB) {
 	history := time.Now().AddDate(0, 0, -7).Format("02-01-2006")
-	var date string
 	var id int
-
 	rows, _ :=
-			database.Query("SELECT * FROM weights WHERE date = ?", history)	
+			database.Query("SELECT id, exercise, weight, units, reps FROM weights WHERE date = ?", history)	
 	for rows.Next() {
 		rows.Scan(&id, &wl.exercise, &wl.weight, &wl.unit, &wl.reps)
 		if id != 0 {
-			fmt.Println( "On", date, "you did:", wl.exercise, wl.weight, wl.unit, "x", wl.reps)
+			fmt.Println( "On", history, "you did:", wl.exercise, wl.weight, wl.unit, "x", wl.reps)
 		}
 	}
 	if id != 0 {
@@ -212,30 +209,30 @@ func (wl weightLifting) prediction(database *sql.DB) {
 }
 
 
-func printAll(database *sql.DB) {
-	var id, weight, reps int
-	var exercise, unit, date string
+func (wl weightLifting) printAll(database *sql.DB) {
+	var id int
+	var date string
 	rows, _ :=
 		database.Query("SELECT * FROM weights")
 	for rows.Next() {
-		rows.Scan(&id, &exercise, &weight, &unit, &reps, &date)
-		fmt.Println(id, ":", exercise, weight, unit, "x", reps, "on", date)
+		rows.Scan(&id, &wl.exercise, &wl.weight, &wl.unit, &wl.reps, &date)
+		fmt.Println(id, ":", wl.exercise, wl.weight, wl.unit, "x", wl.reps, "on", date)
 	}
 }
 
-func printBest(database *sql.DB){
-	var id, weight, reps int
-	var exercise, unit, date string
+func (wl weightLifting) printBest(database *sql.DB){
+	var id int
+	var date string
 	for i := Exercises(0); i < ELimit; i++ {
-		workout := Exercises(i).String()
+		workout := Exercises(i)
 		for j := UnitOptions(0); j < ULimit; j++ {
-			units := UnitOptions(j).String()
+			units := UnitOptions(j)
 			rows, _ :=
 				database.Query("SELECT id, exercise, weight, units, reps, date FROM weights WHERE exercise = ? AND units = ? ORDER BY weight, reps DESC LIMIT 1", workout, units)// ORDER BY weight ASC LIMIT 1", workout, units)
 			for rows.Next() {
-				rows.Scan(&id, &exercise, &weight, &unit, &reps, &date)
+				rows.Scan(&id, &wl.exercise, &wl.weight, &wl.unit, &wl.reps, &date)
 				if id != 0 {
-					fmt.Println("Your best", exercise, "is", weight, unit, "x", reps, "on", date)
+					fmt.Println("Your best", wl.exercise, "is", wl.weight, wl.unit, "x", wl.reps, "on", date)
 				}
 			}
 		}
