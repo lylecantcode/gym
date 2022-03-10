@@ -2,7 +2,7 @@
 
 Creating an exercise tracker for the gym.
 
-Currently working on V7.
+Complete up to and including v8.
 
 ## Project Plan:
 
@@ -11,11 +11,11 @@ Currently working on V7.
 ~v3) Types of exercise done, e.g. Bench Press~  
 ~v4) Reorganised to use structs~  
 ~v5) Predictions based on day of week (for 7 day rotating schedule)~  
-~v6) Add enums in for exercise and unit options~  
-v7) Personal bests per exercise, as a comparison to new workout
+~v6) Add reps (replace sets with separate values, so can have different weights for each set)~
+~v7) Add enums in for exercise and unit options~  
+~v8) Personal bests per exercise, as a comparison to new workout~  
 
 ## Potential extras:
 
 > Overwrite date option  
 > Delete entries  
-> Custom commands to display certain values, e.g. certain exercises, date, bests
