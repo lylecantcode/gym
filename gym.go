@@ -3,17 +3,17 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"time"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
-	_"github.com/mattn/go-sqlite3"
 	"strings"
+	"time"
 )
 
-type weightLifting struct{
+type weightLifting struct {
 	exercise Exercises
-	weight int
-	unit UnitOptions
-	reps int
+	weight   int
+	unit     UnitOptions
+	reps     int
 }
 
 type Exercises int
@@ -52,18 +52,18 @@ func main() {
 		database.Prepare("CREATE TABLE IF NOT EXISTS weights (id INTEGER PRIMARY KEY, exercise INT NOT NULL, weight INT NOT NULL, units INT NOT NULL, reps INT NOT NULL DEFAULT 5, date TEXT NOT NULL)")
 	statement.Exec()
 
-	wl := weightLifting {Tricepext, 0, Resistancebands, 0}
+	wl := weightLifting{Tricepext, 0, Resistancebands, 0}
 	wl.prediction(database)
 
 	fmt.Println("How many different exercises have you done?")
 	exercisesDone := 1
 	fmt.Scanf("%d", &exercisesDone)
-	
-	for i := 0; i < exercisesDone; i++{
-		fmt.Println("What was exercise", i+1, "? Please choose from the following:") 
+
+	for i := 0; i < exercisesDone; i++ {
+		fmt.Println("What was exercise", i+1, "? Please choose from the following:")
 		for i := Exercises(0); i < ELimit; i++ {
 			fmt.Println(">", i)
-		} 
+		}
 		wl.exerciseDone(database)
 	}
 	var records string
@@ -75,19 +75,15 @@ func main() {
 	case "best", "bests", "b":
 		wl.printBest(database)
 	}
-	
+
 }
 
-
-
-func (wl weightLifting) addToDatabase(database *sql.DB){
+func (wl weightLifting) addToDatabase(database *sql.DB) {
 	statement, _ :=
-			database.Prepare("INSERT INTO weights (exercise, weight, units, reps, date) VALUES (?, ?, ?, ?, ?)")
+		database.Prepare("INSERT INTO weights (exercise, weight, units, reps, date) VALUES (?, ?, ?, ?, ?)")
 	statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().Format("02-01-2006"))
 	//statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().AddDate(0, 0, -PERIOD).Format("02-01-2006")) //to add historical entry for testing
-} 
-
-
+}
 
 func copyPrevious(previous string, copyAll bool, database *sql.DB) {
 	if copyAll == true {
@@ -96,8 +92,6 @@ func copyPrevious(previous string, copyAll bool, database *sql.DB) {
 		statement.Exec(time.Now().Format("02-01-2006"), previous)
 	}
 }
-
-
 
 func (wl weightLifting) exerciseDone(database *sql.DB) {
 	var check bool
@@ -117,7 +111,7 @@ func (wl weightLifting) exerciseDone(database *sql.DB) {
 		os.Exit(3)
 	}
 
-	if !((wl.weight > 0 && wl.weight < 1000) && (wl.reps > 0 && wl.reps < 1000)){
+	if !((wl.weight > 0 && wl.weight < 1000) && (wl.reps > 0 && wl.reps < 1000)) {
 		fmt.Fprintf(os.Stderr, "Weights and reps must be positive integers.\n")
 		os.Exit(4)
 	}
@@ -125,14 +119,13 @@ func (wl weightLifting) exerciseDone(database *sql.DB) {
 	fmt.Println("How many times did you do this exercise?")
 	fmt.Scanf("%d", &sets)
 	if sets < 1 {
-		fmt.Fprintf(os.Stderr,"Must have done the exercise at least once.\n")
+		fmt.Fprintf(os.Stderr, "Must have done the exercise at least once.\n")
 		os.Exit(5)
 	}
 	for i := 0; i < sets; i++ {
 		wl.addToDatabase(database)
 	}
 }
-
 
 func (e Exercises) String() string {
 	switch e {
@@ -162,16 +155,15 @@ func (e Exercises) String() string {
 	return "error"
 }
 
-
 func parseExercise(value string) (bool, Exercises) {
 	var confirm string
 	value = strings.ToLower(value)
 	for i := Exercises(0); i < ELimit; i++ {
 		workout := Exercises(i).String()
-		if strings.Contains(workout, value){
+		if strings.Contains(workout, value) {
 			fmt.Println("You have chosen", Exercises(i), "is this correct? Y/N")
 			fmt.Scanf("%s", &confirm)
-			switch confirm{
+			switch confirm {
 			case "y", "yes":
 				return true, Exercises(i)
 			case "n", "no":
@@ -180,32 +172,30 @@ func parseExercise(value string) (bool, Exercises) {
 				return parseExercise(value)
 			}
 		}
-	} 
+	}
 	return false, ELimit
 }
-
 
 func parseUnits(value string) (bool, UnitOptions) {
 	value = strings.ToLower(value)
 	for i := UnitOptions(0); i < ULimit; i++ {
 		units := UnitOptions(i).String()
-		if strings.Contains(units, value){
+		if strings.Contains(units, value) {
 			return true, UnitOptions(i)
 		}
-	} 
+	}
 	return false, ULimit
 }
-
 
 func (wl weightLifting) prediction(database *sql.DB) {
 	previous := time.Now().AddDate(0, 0, -PERIOD).Format("02-01-2006")
 	var id int
 	rows, _ :=
-			database.Query("SELECT id, exercise, weight, units, reps FROM weights WHERE date = ?", previous)	
+		database.Query("SELECT id, exercise, weight, units, reps FROM weights WHERE date = ?", previous)
 	for rows.Next() {
 		rows.Scan(&id, &wl.exercise, &wl.weight, &wl.unit, &wl.reps)
 		if id != 0 {
-			fmt.Println( "On", previous, "you did:", wl.exercise, wl.weight, wl.unit, "x", wl.reps)
+			fmt.Println("On", previous, "you did:", wl.exercise, wl.weight, wl.unit, "x", wl.reps)
 		}
 	}
 	if id != 0 {
@@ -218,7 +208,6 @@ func (wl weightLifting) prediction(database *sql.DB) {
 	}
 }
 
-
 func (wl weightLifting) printAll(database *sql.DB) {
 	var id int
 	var date string
@@ -230,7 +219,7 @@ func (wl weightLifting) printAll(database *sql.DB) {
 	}
 }
 
-func (wl weightLifting) printBest(database *sql.DB){
+func (wl weightLifting) printBest(database *sql.DB) {
 	var id int
 	var date string
 	for i := Exercises(0); i < ELimit; i++ {
@@ -238,7 +227,7 @@ func (wl weightLifting) printBest(database *sql.DB){
 		for j := UnitOptions(0); j < ULimit; j++ {
 			units := UnitOptions(j)
 			rows, _ :=
-				database.Query("SELECT id, exercise, weight, units, reps, date FROM weights WHERE exercise = ? AND units = ? ORDER BY weight, reps DESC LIMIT 1", workout, units)// ORDER BY weight ASC LIMIT 1", workout, units)
+				database.Query("SELECT id, exercise, weight, units, reps, date FROM weights WHERE exercise = ? AND units = ? ORDER BY weight DESC, reps DESC LIMIT 1", workout, units) // ORDER BY weight ASC LIMIT 1", workout, units)
 			for rows.Next() {
 				rows.Scan(&id, &wl.exercise, &wl.weight, &wl.unit, &wl.reps, &date)
 				if id != 0 {
@@ -248,7 +237,6 @@ func (wl weightLifting) printBest(database *sql.DB){
 		}
 	}
 }
-
 
 func (u UnitOptions) String() string {
 	switch u {
@@ -263,5 +251,3 @@ func (u UnitOptions) String() string {
 	}
 	return "error"
 }
-
-
