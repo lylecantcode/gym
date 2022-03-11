@@ -26,7 +26,7 @@ They can see all their previous workouts, the best weight (and rep, but with wei
 
 **Latest Update:**
 
-Complete up to and including v8.
+Complete up to and including v9.
 
 ## Project Plan:
 
@@ -38,6 +38,7 @@ Complete up to and including v8.
 ~v6) Add reps (replace sets with separate values, so can have different weights for each set)~
 ~v7) Add enums in for exercise and unit options~  
 ~v8) Personal bests per exercise, as a comparison to new workout~  
+~v9) Add confirmation for exercise choice~  
 
 ## Potential extras:
 

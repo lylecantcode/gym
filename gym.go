@@ -89,11 +89,11 @@ func (wl weightLifting) addToDatabase(database *sql.DB){
 
 
 
-func copyPrevious(history string, copyAll bool, database *sql.DB) {
+func copyPrevious(previous string, copyAll bool, database *sql.DB) {
 	if copyAll == true {
 		statement, _ :=
 			database.Prepare("INSERT INTO weights (date, exercise, weight, units, reps) SELECT ?, exercise, weight, units, reps FROM weights WHERE date = ?")
-		statement.Exec(time.Now().Format("02-01-2006"), history)
+		statement.Exec(time.Now().Format("02-01-2006"), previous)
 	}
 }
 
@@ -105,7 +105,7 @@ func (wl weightLifting) exerciseDone(database *sql.DB) {
 	fmt.Scanf("%s", &exerciseInput)
 	check, wl.exercise = parseExercise(exerciseInput)
 	if !check {
-		fmt.Fprintf(os.Stderr, "Invalid exercise: %s.", exerciseInput)
+		fmt.Fprintf(os.Stderr, "Invalid exercise: %s.\n", exerciseInput)
 		os.Exit(2)
 	}
 
@@ -113,19 +113,19 @@ func (wl weightLifting) exerciseDone(database *sql.DB) {
 	fmt.Scanf("%d %s x %d", &wl.weight, &unitInput, &wl.reps)
 	check, wl.unit = parseUnits(unitInput)
 	if !check {
-		fmt.Fprintf(os.Stderr, "Invalid units: %s", unitInput)
+		fmt.Fprintf(os.Stderr, "Invalid units: %s\n", unitInput)
 		os.Exit(3)
 	}
 
 	if !((wl.weight > 0 && wl.weight < 1000) && (wl.reps > 0 && wl.reps < 1000)){
-		fmt.Fprintf(os.Stderr, "Weights and reps must be positive integers.")
+		fmt.Fprintf(os.Stderr, "Weights and reps must be positive integers.\n")
 		os.Exit(4)
 	}
 	var sets int
 	fmt.Println("How many times did you do this exercise?")
 	fmt.Scanf("%d", &sets)
 	if sets < 1 {
-		fmt.Fprintf(os.Stderr,"Must have done the exercise at least once.")
+		fmt.Fprintf(os.Stderr,"Must have done the exercise at least once.\n")
 		os.Exit(5)
 	}
 	for i := 0; i < sets; i++ {
@@ -164,11 +164,21 @@ func (e Exercises) String() string {
 
 
 func parseExercise(value string) (bool, Exercises) {
+	var confirm string
 	value = strings.ToLower(value)
 	for i := Exercises(0); i < ELimit; i++ {
 		workout := Exercises(i).String()
 		if strings.Contains(workout, value){
-			return true, Exercises(i)
+			fmt.Println("You have chosen", Exercises(i), "is this correct? Y/N")
+			fmt.Scanf("%s", &confirm)
+			switch confirm{
+			case "y", "yes":
+				return true, Exercises(i)
+			case "n", "no":
+				fmt.Println("Please try entering your exercise again.")
+				fmt.Scanf("%s", &value)
+				return parseExercise(value)
+			}
 		}
 	} 
 	return false, ELimit
@@ -188,14 +198,14 @@ func parseUnits(value string) (bool, UnitOptions) {
 
 
 func (wl weightLifting) prediction(database *sql.DB) {
-	history := time.Now().AddDate(0, 0, -PERIOD).Format("02-01-2006")
+	previous := time.Now().AddDate(0, 0, -PERIOD).Format("02-01-2006")
 	var id int
 	rows, _ :=
-			database.Query("SELECT id, exercise, weight, units, reps FROM weights WHERE date = ?", history)	
+			database.Query("SELECT id, exercise, weight, units, reps FROM weights WHERE date = ?", previous)	
 	for rows.Next() {
 		rows.Scan(&id, &wl.exercise, &wl.weight, &wl.unit, &wl.reps)
 		if id != 0 {
-			fmt.Println( "On", history, "you did:", wl.exercise, wl.weight, wl.unit, "x", wl.reps)
+			fmt.Println( "On", previous, "you did:", wl.exercise, wl.weight, wl.unit, "x", wl.reps)
 		}
 	}
 	if id != 0 {
@@ -203,7 +213,7 @@ func (wl weightLifting) prediction(database *sql.DB) {
 		fmt.Println("Would you like to reuse this data? (y/n)")
 		fmt.Scanln(&reuse)
 		if strings.ToLower(reuse) == "y" {
-			copyPrevious(history, true, database)
+			copyPrevious(previous, true, database)
 		}
 	}
 }
