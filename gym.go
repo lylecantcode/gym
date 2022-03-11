@@ -43,7 +43,7 @@ const (
 	ULimit
 )
 
-
+const PERIOD int = 7
 
 func main() {
 	database, _ :=
@@ -84,7 +84,7 @@ func (wl weightLifting) addToDatabase(database *sql.DB){
 	statement, _ :=
 			database.Prepare("INSERT INTO weights (exercise, weight, units, reps, date) VALUES (?, ?, ?, ?, ?)")
 	statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().Format("02-01-2006"))
-	//statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().AddDate(0, 0, -7).Format("02-01-2006")) //to add historical entry for testing
+	//statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().AddDate(0, 0, -PERIOD).Format("02-01-2006")) //to add historical entry for testing
 } 
 
 
@@ -188,7 +188,7 @@ func parseUnits(value string) (bool, UnitOptions) {
 
 
 func (wl weightLifting) prediction(database *sql.DB) {
-	history := time.Now().AddDate(0, 0, -7).Format("02-01-2006")
+	history := time.Now().AddDate(0, 0, -PERIOD).Format("02-01-2006")
 	var id int
 	rows, _ :=
 			database.Query("SELECT id, exercise, weight, units, reps FROM weights WHERE date = ?", history)	
