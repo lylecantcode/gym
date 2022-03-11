@@ -1,6 +1,9 @@
 # Gym (Tracker)
 
-Creating an exercise tracker for the gym.
+#### Video Demo: https://youtu.be/0Em6o0eiW0I 
+#### Description:
+An exercise tracker to be used in CLI.
+Created using GO, customised to my normal routine.
 
 Complete up to and including v8.
 
