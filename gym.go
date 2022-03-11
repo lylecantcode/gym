@@ -45,6 +45,8 @@ const (
 
 const PERIOD int = 7
 
+var today string = time.Now().Format("02-01-2006")
+
 func main() {
 	database, _ :=
 		sql.Open("sqlite3", "./gym.db")
@@ -67,13 +69,15 @@ func main() {
 		wl.exerciseDone(database)
 	}
 	var records string
-	fmt.Println("Would you like to see your previous workouts? y/n/best")
+	fmt.Println("Would you like to see your previous workouts? y/n/best/todays")
 	fmt.Scanf("%s", &records)
 	switch strings.ToLower(records) {
 	case "y", "yes":
 		wl.printAll(database)
 	case "best", "bests", "b":
 		wl.printBest(database)
+	case "today", "t", "todays":
+		wl.printToday(database)
 	}
 
 }
@@ -81,7 +85,7 @@ func main() {
 func (wl weightLifting) addToDatabase(database *sql.DB) {
 	statement, _ :=
 		database.Prepare("INSERT INTO weights (exercise, weight, units, reps, date) VALUES (?, ?, ?, ?, ?)")
-	statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().Format("02-01-2006"))
+	statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, today)
 	//statement.Exec(wl.exercise, wl.weight, wl.unit, wl.reps, time.Now().AddDate(0, 0, -PERIOD).Format("02-01-2006")) //to add historical entry for testing
 }
 
@@ -89,7 +93,7 @@ func copyPrevious(previous string, copyAll bool, database *sql.DB) {
 	if copyAll == true {
 		statement, _ :=
 			database.Prepare("INSERT INTO weights (date, exercise, weight, units, reps) SELECT ?, exercise, weight, units, reps FROM weights WHERE date = ?")
-		statement.Exec(time.Now().Format("02-01-2006"), previous)
+		statement.Exec(today, previous)
 	}
 }
 
@@ -227,16 +231,39 @@ func (wl weightLifting) printBest(database *sql.DB) {
 		for j := UnitOptions(0); j < ULimit; j++ {
 			units := UnitOptions(j)
 			rows, _ :=
-				database.Query("SELECT id, exercise, weight, units, reps, date FROM weights WHERE exercise = ? AND units = ? ORDER BY weight DESC, reps DESC LIMIT 1", workout, units) // ORDER BY weight ASC LIMIT 1", workout, units)
+				database.Query("SELECT * FROM weights WHERE exercise = ? AND units = ? ORDER BY weight DESC, reps DESC LIMIT 1", workout, units) 
 			for rows.Next() {
 				rows.Scan(&id, &wl.exercise, &wl.weight, &wl.unit, &wl.reps, &date)
 				if id != 0 {
-					fmt.Println("Your best", wl.exercise, "is", wl.weight, wl.unit, "x", wl.reps, "on", date)
+					fmt.Println("Your best", wl.exercise, "was", wl.weight, wl.unit, "x", wl.reps, "on", date)
 				}
 			}
 		}
 	}
 }
+
+
+func (wl weightLifting) printToday(database *sql.DB) {
+	var id, counter int
+	rows, _ :=
+		database.Query("SELECT id, exercise, weight, units, reps FROM weights WHERE date = ?", today)
+	for rows.Next() {
+		rows.Scan(&id, &wl.exercise, &wl.weight, &wl.unit, &wl.reps)
+		if id != 0 {
+			if counter == 0 {
+				fmt.Printf("Today (%s) you did the following exercises:\n", today)
+				fmt.Println(counter +1 , ":", wl.exercise, wl.weight, wl.unit, "x", wl.reps)
+			}else{
+				fmt.Println(counter + 1, ":", wl.exercise, wl.weight, wl.unit, "x", wl.reps)
+			}
+			counter++
+		} else {
+			fmt.Println("No exercises found for today!")
+			break
+		}
+	}
+}
+
 
 func (u UnitOptions) String() string {
 	switch u {
